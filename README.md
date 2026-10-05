@@ -22,6 +22,7 @@ bash scripts/install-tmux.sh       # 個別（実行権限が無くても bash �
 |---|---|---|
 | `scripts/install-tmux.sh` | tmux 本体の導入 + `config-tmux.sh` の呼び出し（導入済みでも設定は反映） | 作成済み |
 | `scripts/config-tmux.sh` | `config/tmux/.tmux.conf` を `~/.tmux.conf` に symlink。起動中の tmux があれば再読み込み | 作成済み |
+| `scripts/config-claude.sh` | Claude Code のステータスライン。`config/claude/statusline.sh` を `~/.claude/statusline.sh` に symlink し、`~/.claude/settings.json` の `statusLine` だけを設定（他のキーは保持、変更前に退避）。jq が無ければ apt で導入 | 作成済み |
 | `scripts/install-lazygit.sh` / `config-lazygit.sh` | lazygit 導入と設定（tmux prefix+g で popup） | 未 |
 | `scripts/install-search-tools.sh` | fzf / fd / ripgrep | 未 |
 | `scripts/install-neovim.sh` | Neovim 本体（公式 tarball、v0.12.5 固定・sha256 検証。`/opt/nvim-<ver>` → `/usr/local/bin/nvim`） | 作成済み |
@@ -45,6 +46,7 @@ bash scripts/install-tmux.sh       # 個別（実行権限が無くても bash �
 | install-tmux | `tmux -V` が `tmux 3.3a` を返す。2 回目の実行は skip（本体）と already linked（設定）と表示される |
 | config-tmux | `ls -l ~/.tmux.conf` が `config/tmux/.tmux.conf` への symlink。tmux 内で `prefix + |` が左右分割 |
 | install-neovim | `nvim --version` が `NVIM v0.12.5`。2 回目の実行は skip と表示される |
+| config-claude | `~/.claude/settings.json` の `statusLine` が設定され、Claude Code を再起動すると 3 行表示（モデル/ディレクトリ・ctx/費用・5h/7d 制限）。2 回目は already linked / already set と表示される |
 | config-neovim | `nvim` で `<C-p>` がファイル検索、`<leader>e`（leader=Space）がファイルツリー。2 回目は already linked と表示される |
 
 ## Neovim メモ
@@ -54,3 +56,11 @@ bash scripts/install-tmux.sh       # 個別（実行権限が無くても bash �
 - アイコンは Nerd Font 無しでも崩れないよう無効化している
 - `config/nvim/lazy-lock.json` はプラグインのバージョン固定。更新したい時は `nvim` で `:Lazy update` して差分をコミットする
 - バージョン上書き: `NVIM_VERSION=v0.12.6 NVIM_SHA256=<tarball の sha256> bash scripts/install-neovim.sh`
+
+## Claude Code ステータスライン メモ
+
+- 表示: 1 行目 モデル・effort・ディレクトリ(git ブランチ)・変更行数 / 2 行目 コンテキスト使用率とトークン・セッション費用・経過時間 / 3 行目 5 時間制限・7 日制限の使用率とリセットまでの残り
+- 値は Claude Code が stdin で渡す JSON をそのまま使う（ccusage 等の外部集計は不要）。依存は jq のみ
+- `rate_limits`（5h/7d）は claude.ai の Pro/Max 契約のみで、セッション最初の API 応答後に出る。それまで・API キー利用時は `--` 表示
+- `cost` は list price からの概算で、実際の請求額とは異なる場合がある
+- 使用率の色: 50% 未満=緑 / 80% 未満=黄 / 80% 以上=赤
