@@ -20,8 +20,8 @@ bash scripts/install-tmux.sh       # 個別（実行権限が無くても bash �
 
 | スクリプト | 責務 | 状態 |
 |---|---|---|
-| `scripts/install-tmux.sh` | tmux 本体の導入のみ | 作成済み |
-| `scripts/config-tmux.sh` | `~/.tmux.conf` の配置（本体は `config/tmux.conf`） | 未 |
+| `scripts/install-tmux.sh` | tmux 本体の導入 + `config-tmux.sh` の呼び出し（導入済みでも設定は反映） | 作成済み |
+| `scripts/config-tmux.sh` | `config/tmux/.tmux.conf` を `~/.tmux.conf` に symlink。起動中の tmux があれば再読み込み | 作成済み |
 | `scripts/install-lazygit.sh` / `config-lazygit.sh` | lazygit 導入と設定（tmux prefix+g で popup） | 未 |
 | `scripts/install-search-tools.sh` | fzf / fd / ripgrep | 未 |
 | `scripts/install-neovim.sh` | Neovim 本体（公式 tarball、v0.12.5 固定・sha256 検証。`/opt/nvim-<ver>` → `/usr/local/bin/nvim`） | 作成済み |
@@ -42,7 +42,8 @@ bash scripts/install-tmux.sh       # 個別（実行権限が無くても bash �
 
 | スクリプト | 確認 |
 |---|---|
-| install-tmux | `tmux -V` が `tmux 3.3a` を返す。2 回目の実行は skip と表示される |
+| install-tmux | `tmux -V` が `tmux 3.3a` を返す。2 回目の実行は skip（本体）と already linked（設定）と表示される |
+| config-tmux | `ls -l ~/.tmux.conf` が `config/tmux/.tmux.conf` への symlink。tmux 内で `prefix + |` が左右分割 |
 | install-neovim | `nvim --version` が `NVIM v0.12.5`。2 回目の実行は skip と表示される |
 | config-neovim | `nvim` で `<C-p>` がファイル検索、`<leader>e`（leader=Space）がファイルツリー。2 回目は already linked と表示される |
 
