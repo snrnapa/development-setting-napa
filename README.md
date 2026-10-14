@@ -31,6 +31,14 @@ bash scripts/install-tmux.sh       # 個別（実行権限が無くても bash �
 | `install-all.sh` | 上を順に実行 | 未 |
 | `scripts/lib/common.sh` | 共通関数（アーキ判定、sudo、apt、ログ） | 作成済み |
 
+## 手順メモ（docs/）
+
+スクリプト化していない、または GUI 操作が中心の環境構築の手順メモ。
+
+| ドキュメント | 内容 |
+|---|---|
+| `docs/remote-desktop-ubuntu-to-windows.md` | Ubuntu ノートPC (Remmina) から Windows 11 へ RDP 接続。疎通確認・Windows 側設定・画面/音声の調整 |
+
 ## 共通ルール
 
 - 冪等（何度流しても安全）。既存設定は上書き前に `~/.backup/<timestamp>/` へ退避
