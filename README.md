@@ -23,6 +23,8 @@ bash scripts/install-tmux.sh       # 個別（実行権限が無くても bash �
 | `scripts/install-tmux.sh` | tmux 本体の導入 + `config-tmux.sh` の呼び出し（導入済みでも設定は反映） | 作成済み |
 | `scripts/config-tmux.sh` | `config/tmux/.tmux.conf` を `~/.tmux.conf` に symlink。起動中の tmux があれば再読み込み | 作成済み |
 | `scripts/config-claude.sh` | Claude Code のステータスライン。`config/claude/statusline.sh` を `~/.claude/statusline.sh` に symlink し、`~/.claude/settings.json` の `statusLine` だけを設定（他のキーは保持、変更前に退避）。jq が無ければ apt で導入 | 作成済み |
+| `scripts/install-remmina.sh` | Remmina（RDP クライアント）の導入（apt）+ `config-remmina.sh` の呼び出し。GUI 環境向け | 作成済み |
+| `scripts/config-remmina.sh` | `config/remmina/desktop-pc.remmina.template` に接続先・ユーザー名を埋めて `~/.local/share/remmina/desktop-pc.remmina` を生成。値は環境変数か `~/.config/development-setting-napa/remmina.env`（無ければ対話入力して保存）。IP とユーザー名は公開リポジトリに置かないためテンプレートには入れない。パスワードは扱わない | 作成済み |
 | `scripts/install-lazygit.sh` / `config-lazygit.sh` | lazygit 導入と設定（tmux prefix+g で popup） | 未 |
 | `scripts/install-search-tools.sh` | fzf / fd / ripgrep | 未 |
 | `scripts/install-neovim.sh` | Neovim 本体（公式 tarball、v0.12.5 固定・sha256 検証。`/opt/nvim-<ver>` → `/usr/local/bin/nvim`） | 作成済み |
@@ -56,6 +58,7 @@ bash scripts/install-tmux.sh       # 個別（実行権限が無くても bash �
 | install-neovim | `nvim --version` が `NVIM v0.12.5`。2 回目の実行は skip と表示される |
 | config-claude | `~/.claude/settings.json` の `statusLine` が設定され、Claude Code を再起動すると 3 行表示（モデル/ディレクトリ・ctx/費用・5h/7d 制限）。2 回目は already linked / already set と表示される |
 | config-neovim | `nvim` で `<C-p>` がファイル検索、`<leader>e`（leader=Space）がファイルツリー。2 回目は already linked と表示される |
+| config-remmina | 環境変数 `REMMINA_RDP_SERVER` `REMMINA_RDP_USER` を渡して実行すると `~/.local/share/remmina/desktop-pc.remmina` ができる。2 回目は already up to date と表示される。値を変えて流すと既存を `~/.backup/` に退避して作り直す。Remmina で接続し、Windows キー / Alt+Tab がリモート側に効く（未確認） |
 
 ## Neovim メモ
 

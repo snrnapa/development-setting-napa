@@ -48,15 +48,37 @@ Remmina の GUI での操作: 接続を切る → プロファイルを右クリ
 
 > 注: 上記の変更後に実際に表示・音声が直ったかは、この時点では未確認。確認したらここを更新する。
 
-## 5. 設定ファイルの場所
+## 5. 設定をコードで管理する（新しい環境への引き継ぎ）
+
+```bash
+REMMINA_RDP_SERVER=192.168.2.107 REMMINA_RDP_USER=<Windowsのユーザー名> bash scripts/install-remmina.sh
+```
+
+- `install-remmina.sh` が Remmina を apt で入れ、`config-remmina.sh` が接続プロファイルを生成する
+- テンプレートは `config/remmina/desktop-pc.remmina.template`。IP とユーザー名は `@SERVER@` `@USER@` のままで、**このリポジトリは公開なので実際の値は入れない**
+- 値は環境変数、または `~/.config/development-setting-napa/remmina.env`（権限 600、リポジトリ外）から読む。どちらも無ければ対話で聞いて env ファイルに保存する。2 回目以降は入力不要
+- パスワードは保存しない。接続時に Remmina が聞く
+- 証明書の警告を無視する設定は入れていない。初回接続時に承認する（自宅 LAN 内の自分の PC の場合）
+- Remmina が保存時にファイルを書き換えるため、symlink ではなく生成ファイル。内容が同じなら何もせず、違えば既存を `~/.backup/<日時>/` に退避して作り直す。**GUI で変えた設定は、テンプレートに反映しないと次回の実行で上書きされる**
+
+テンプレートの主な設定:
+
+| キー | 値 | 意味 |
+|---|---|---|
+| `sound` | `local` | 音をノートPC側で鳴らす |
+| `resolution_mode` | `1` | クライアント(ノートPC)の解像度を使う |
+| `keyboard_grab` | `1` | キーボードを取り込み、Windows キーや Alt+Tab をリモート側へ送る |
+
+> 注: `keyboard_grab` が Wayland で実際に効くかは未確認。効かなければ「Ubuntu on Xorg」セッションで試す。
+
+プロファイルの場所と、手で編集するときの注意:
 
 ```
-~/.local/share/remmina/group_rdp_<プロファイル名>_<IP>.remmina
+~/.local/share/remmina/desktop-pc.remmina
 ```
 
-主なキー: `server` / `resolution_mode` / `resolution_width` / `resolution_height` / `colordepth` / `sound` / `viewmode`。
 Remmina 起動中に手で編集すると上書きされることがあるので、閉じてから編集するか GUI で変更する。
-接続情報（IP やユーザー名）を含みうるので、このファイル自体はリポジトリに入れない。
+実際の接続情報(IP・ユーザー名)を含むので、生成されたファイル自体はリポジトリに入れない。
 
 ## 6. 他の選択肢（未使用）
 

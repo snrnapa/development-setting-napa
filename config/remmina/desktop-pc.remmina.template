@@ -1,0 +1,15 @@
+[remmina]
+name=@NAME@
+protocol=RDP
+server=@SERVER@
+username=@USER@
+sound=local
+colordepth=99
+quality=1
+network=none
+resolution_mode=1
+resolution_width=0
+resolution_height=0
+window_maximize=1
+viewmode=4
+keyboard_grab=1
