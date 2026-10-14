@@ -1,64 +1,96 @@
-# Claude Code で仕様の壁打ちから実装まで進める
+# Claude Code での個人開発の進め方
 
-個人開発で、Claude Projects でアイデアを詰めてから Claude Code に移す、という二度手間をやめるための手順メモ。
-仕様も Claude Code 上で対話しながら固め、決まったことはリポジトリ内の Markdown に残す。
+Claude Projects でアイデアを詰めてから Claude Code に移す二度手間をやめ、立ち上げ・壁打ち・実装を Claude Code だけで回すための手順。
+自作の Skill は作らず、評価の高い既存のプラグインをそのまま使う。困りごとが実際に 2 回起きたら、そのとき道具を足す。
 
-（2026-10-14 時点の調査）
-
-## 方針
-
-- 仕様・コード・決定理由を同じリポジトリに置き、git で管理する
-- Claude Code の会話は次のセッションに残らない。前提を毎回話さないで済むよう、決定事項は都度ファイルに書き戻す
-- Claude Projects が向くのは、コードと関係ないアイデア出しや資料の読み込みだけ。スマホからも claude.ai/code で Claude Code が使える
-
-| Claude Projects | Claude Code での置き場所 |
-|---|---|
-| カスタム指示 | プロジェクトの `CLAUDE.md`（毎回自動で読み込まれる） |
-| ナレッジ（資料） | `docs/` 配下の Markdown |
-| 会話で仕様を詰める進め方 | Skill / プラグイン（下記の Superpowers） |
-
-## 使える既存の仕組み
-
-| 名前 | 特徴 | 向き |
-|---|---|---|
-| Superpowers（obra/superpowers） | brainstorming スキルが 1 問ずつ質問し、2〜3 案を推奨付きで出し、設計を区切りごとに承認させて `docs/superpowers/specs/` に設計書を書く。その後 writing-plans → 実装へ進む | 壁打ちで仕様を固めたい（第一候補） |
-| cc-sdd | Kiro 風の仕様駆動開発。要件 → 設計 → タスクの順に文書化。日本語対応 | 型の決まった仕様書がほしい |
-| GitHub Spec Kit | `/specify` → `/plan` → `/tasks`。対応エージェントが多い | 堅めに進めたい |
-| BMAD Method | 役割別エージェントが多数 | 個人開発には重い |
-
-## 手順
-
-### 1. Superpowers を導入する
+## セットアップ（一括）
 
 ```bash
-bash scripts/install-superpowers.sh
+bash scripts/install-claude-plugins.sh   # config/claude/plugins.txt のプラグインを user スコープで一括導入
 ```
 
-Anthropic 公式マーケットプレイス `claude-plugins-official` から user スコープで入れる（中身は `claude plugin install superpowers@claude-plugins-official --scope user`）。導入後は Claude Code を再起動する。
-作者のマーケットプレイス（`obra/superpowers-marketplace`）からも入れられるが、公式の方を使う。
+導入後に Claude Code を再起動する。プラグインを足したり外したりするときは `config/claude/plugins.txt` を編集して流し直す（リストから消してもアンインストールはされないので、外すときは `claude plugin uninstall <id>`）。
 
-### 2. 新しいプロジェクトで壁打ちする
+| プラグイン | 役割 | 常時コスト |
+|---|---|---|
+| superpowers | 立ち上げの設計（brainstorming）、実装時の規律（TDD・デバッグ・完了前検証・worktree） | 約 840 tok |
+| mattpocock-skills | 壁打ち（`/grill-me` `/grill-with-docs`）、ドメインモデリング | 約 1,600 tok |
+| claude-md-management | `/revise-claude-md` でセッションの学びを CLAUDE.md に反映 | 約 180 tok |
+| context7 | ライブラリの最新ドキュメントを参照（外部の mcp.context7.com に問い合わせる） | ほぼ 0 |
+| frontend-design | UI の見た目の質（ありがちな AI っぽい見た目を避ける） | 約 80 tok |
+| ui-ux-pro-max | UI/UX の知識ベース（スタイル・配色・フォント・UX ガイドライン）。python3 が必要 | 約 1,070 tok |
+| playwright | ブラウザ操作・E2E テスト（MCP） | ほぼ 0 |
+| security-guidance | 編集時の脆弱性パターン警告、ターン終了時の差分レビュー、コミット前レビュー | 0（hook のみ） |
 
-1. 空のリポジトリを作り `git init` する
-2. Claude Code を起動し、作りたいものを伝える（例: 「保護猫団体が保護から譲渡までを管理するアプリを作りたい」）
-3. brainstorming が起動し、Claude が質問してくるので答える。設計は区切りごとに承認する
-4. できた設計書をコミットする
+常時コストは `claude plugin details <名前>` の値で、合計は約 3.8k tok。
 
-Claude Projects で話した内容がある場合は、Projects 側で「ここまでの決定事項を全部まとめて」と出力させ、最初に貼り付ける。
+## 場面ごとの使い方
 
-### 3. 実装する
+| 場面 | やること |
+|---|---|
+| 新しいプロジェクトを立ち上げる | 作りたいものを普通に話す。superpowers の brainstorming が起動し、1 問ずつ質問して設計書を作る |
+| 思いついたこと・気づいたことをさっと壁打ちする | `/grill-me <思いついたこと>`。論点がなくなるまで質問を重ねて形にする（ファイルは書かない） |
+| 壁打ちの結論を記録に残す | `/grill-with-docs <論点>`。用語集（GLOSSARY.md）と決定記録（ADR）をその場で更新する |
+| 実装する（在席） | 普通に頼む。superpowers の TDD・デバッグが必要に応じて効く |
+| 実装する（離席） | `おまかせ`（`~/.claude/CLAUDE.md` の自律オーケストレーション） |
+| 条件を満たすまで回す | `/goal <完了条件>`（例: `/goal test/ の全テストが通り lint がクリーン。または 20 ターンで停止`） |
+| CLAUDE.md を整える | `/revise-claude-md` |
 
-次のどちらかに寄せる（役割が重なるので混ぜない）。
+### 専門の Skill は Claude が自動で選ぶ
 
-- Superpowers の流れのまま writing-plans → 実装まで進める
-- 仕様までを Superpowers で作り、実装は `おまかせ`（`~/.claude/CLAUDE.md` の自律オーケストレーション）に渡す。この場合、`おまかせ` のフェーズ0は設計書を読んで足りない点だけ聞くように直すと二度手間にならない
+UI を作る・直すといった依頼をすると、frontend-design や ui-ux-pro-max のような専門の Skill を Claude が説明文から判断して自動で使う。
+確実に使わせたいときは「ui-ux-pro-max を使って」のように名前を出す。
 
-大きめの作業は `/goal <完了条件>` で、条件を満たすまで回すこともできる（例: `/goal test/ の全テストが通り lint がクリーン`）。
+## 他の人と一緒に開発するとき
+
+設定を 2 層に分ける。
+
+| 層 | 置き場所 | 中身 |
+|---|---|---|
+| 個人の作業環境 | このリポジトリ（development-setting-napa） | 自分が使うプラグイン一式、tmux・Neovim など。参考として共有はするが、相手に強制しない |
+| プロジェクトのルール | プロジェクトのリポジトリ（例: hogoneko-repo） | CLAUDE.md、docs/（設計書・用語集・ADR）、`.claude/settings.json` |
+
+プロジェクトで必須のプラグインは、プロジェクトの `.claude/settings.json` に書いてコミットする。
+フォルダを信頼すると、マーケットプレイスは自動で登録される。プラグインは、各自がインストールする必要がある場合がある。
+
+```json
+{
+  "extraKnownMarketplaces": {
+    "ui-ux-pro-max-skill": {
+      "source": { "source": "github", "repo": "nextlevelbuilder/ui-ux-pro-max-skill" }
+    }
+  },
+  "enabledPlugins": {
+    "superpowers@claude-plugins-official": true,
+    "mattpocock-skills@claude-plugins-official": true,
+    "frontend-design@claude-plugins-official": true,
+    "ui-ux-pro-max@ui-ux-pro-max-skill": true
+  }
+}
+```
+
+個人だけで使うものはプロジェクト側に書かない（各自の `~/.claude` に任せる）。プロジェクトで有効になっているプラグインを自分だけ外すときは、`.claude/settings.local.json` で `false` にする。
+
+## 注意
+
+- `/grill-with-docs` は、リポジトリごとに一度 `/setup-matt-pocock-skills` が必要な場合がある（README に記載。未検証）
+- mattpocock-skills の `tdd` `code-review` `diagnosing-bugs` は superpowers と役割が重なる。どちらが起動しても大きな害はないが、気になったら外す
+- security-guidance はターン終了時に差分をレビューするので、応答が遅く感じたら最初に外す候補
+- ui-ux-pro-max のマーケットプレイスは GitHub から SSH で clone される。SSH 鍵のない環境で失敗したら `claude plugin marketplace add https://github.com/nextlevelbuilder/ui-ux-pro-max-skill` を先に流す
+
+## 入れないもの
+
+| プラグイン | 理由 |
+|---|---|
+| feature-dev | 探索→質問→設計→実装→レビューの流れが superpowers・おまかせと重複する |
+| ralph-loop | `/goal` と重複する |
+| code-review / code-simplifier | 組み込みの `/code-review` / `/simplify` と重複する |
+| github | `gh` CLI で足りる |
 
 ## 参考
 
-- [Superpowers deep dive](https://www.heyuan110.com/posts/ai/2026-02-01-superpowers-deep-dive/)
-- [Claude brainstorming skill guide](https://mcp.directory/blog/claude-brainstorming-skill-guide)
-- [Spec Kit vs OpenSpec vs BMAD vs Superpowers](https://developertoolkit.ai/en/ecosystem/frameworks/spec-driven-frameworks/)
-- [仕様駆動開発ツール比較（Spec Kit・Kiro・cc-sdd・OpenSpec・Tessl）](https://www.issoh.co.jp/tech/details/8732/)
+- [obra/superpowers](https://github.com/obra/superpowers)
+- [mattpocock/skills](https://github.com/mattpocock/skills)
+- [nextlevelbuilder/ui-ux-pro-max-skill](https://github.com/nextlevelbuilder/ui-ux-pro-max-skill)
 - [Claude Code 公式: /goal](https://code.claude.com/docs/en/goal)
+- [Claude Code 公式: settings（enabledPlugins / extraKnownMarketplaces）](https://code.claude.com/docs/en/settings-reference)

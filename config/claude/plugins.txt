@@ -1,0 +1,27 @@
+# scripts/install-claude-plugins.sh が入れる Claude Code プラグイン（user スコープ）
+# 書式: <plugin>@<marketplace> [<marketplace の source（owner/repo 等）>]
+# claude-plugins-official 以外のマーケットプレイスは source を書く
+# 使い分けは docs/claude-code-spec-workflow.md を参照
+
+# --- 進め方 ---
+# 立ち上げ（brainstorming）と実装時の規律（TDD・デバッグ・完了前検証・worktree）
+superpowers@claude-plugins-official
+# 思いつきの壁打ち（/grill-me）、結論を用語集・ADR に残す壁打ち（/grill-with-docs）
+mattpocock-skills@claude-plugins-official
+# CLAUDE.md の監査とセッションの学びの反映（/revise-claude-md）
+claude-md-management@claude-plugins-official
+
+# --- 領域ごとの専門家 ---
+# ライブラリの最新ドキュメント参照（リモート MCP: mcp.context7.com）
+context7@claude-plugins-official
+# UI: 見た目の質（ありがちな AI っぽい見た目を避ける）
+frontend-design@claude-plugins-official
+# UI/UX: スタイル・配色・フォント・UX ガイドラインの知識ベース（search.py に python3 が必要）
+ui-ux-pro-max@ui-ux-pro-max-skill nextlevelbuilder/ui-ux-pro-max-skill
+# ブラウザ操作・E2E テスト（Microsoft の Playwright MCP）
+playwright@claude-plugins-official
+# セキュリティ: 編集時のパターン警告、ターン終了時の差分レビュー、コミット前レビュー
+security-guidance@claude-plugins-official
+
+# 入れない（重複）: feature-dev（おまかせ / superpowers）, ralph-loop（/goal）,
+#                  code-review / code-simplifier（組み込み /code-review /simplify）, github（gh CLI）

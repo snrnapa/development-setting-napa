@@ -23,7 +23,7 @@ bash scripts/install-tmux.sh       # 個別（実行権限が無くても bash �
 | `scripts/install-tmux.sh` | tmux 本体の導入 + `config-tmux.sh` の呼び出し（導入済みでも設定は反映） | 作成済み |
 | `scripts/config-tmux.sh` | `config/tmux/.tmux.conf` を `~/.tmux.conf` に symlink。起動中の tmux があれば再読み込み | 作成済み |
 | `scripts/config-claude.sh` | Claude Code のステータスライン。`config/claude/statusline.sh` を `~/.claude/statusline.sh` に symlink し、`~/.claude/settings.json` の `statusLine` だけを設定（他のキーは保持、変更前に退避）。jq が無ければ apt で導入 | 作成済み |
-| `scripts/install-superpowers.sh` | Claude Code プラグイン Superpowers（仕様の壁打ち〜実装のスキル集）を公式マーケットプレイス `claude-plugins-official` から user スコープで導入。導入済みで無効なら有効化。claude CLI が必要 | 作成済み |
+| `scripts/install-claude-plugins.sh` | `config/claude/plugins.txt` に並べた Claude Code プラグイン（superpowers / mattpocock-skills / claude-md-management / context7 / frontend-design / ui-ux-pro-max / playwright / security-guidance）を user スコープで一括導入。マーケットプレイス未登録なら追加、導入済みで無効なら有効化。リストから消してもアンインストールはしない。claude CLI が必要 | 作成済み |
 | `scripts/install-remmina.sh` | Remmina（RDP クライアント）の導入（apt）+ `config-remmina.sh` の呼び出し。GUI 環境向け | 作成済み |
 | `scripts/config-remmina.sh` | `config/remmina/desktop-pc.remmina.template` に接続先・ユーザー名を埋めて `~/.local/share/remmina/desktop-pc.remmina` を生成。値は環境変数か `~/.config/development-setting-napa/remmina.env`（無ければ対話入力して保存）。IP とユーザー名は公開リポジトリに置かないためテンプレートには入れない。パスワードは扱わない | 作成済み |
 | `scripts/install-lazygit.sh` / `config-lazygit.sh` | lazygit 導入と設定（tmux prefix+g で popup） | 未 |
@@ -41,7 +41,7 @@ bash scripts/install-tmux.sh       # 個別（実行権限が無くても bash �
 | ドキュメント | 内容 |
 |---|---|
 | `docs/remote-desktop-ubuntu-to-windows.md` | Ubuntu ノートPC (Remmina) から Windows 11 へ RDP 接続。疎通確認・Windows 側設定・画面/音声の調整 |
-| `docs/claude-code-spec-workflow.md` | Claude Code 上で仕様の壁打ち（Superpowers など）から実装まで進める手順。Claude Projects との使い分け |
+| `docs/claude-code-spec-workflow.md` | Claude Code での個人開発の進め方。プラグインの一括導入、場面ごとの使い方（立ち上げ・`/grill-me` での壁打ち・実装）、他の人と開発するときの設定の分け方 |
 
 ## 共通ルール
 
@@ -59,7 +59,7 @@ bash scripts/install-tmux.sh       # 個別（実行権限が無くても bash �
 | config-tmux | `ls -l ~/.tmux.conf` が `config/tmux/.tmux.conf` への symlink。tmux 内で `prefix + |` が左右分割 |
 | install-neovim | `nvim --version` が `NVIM v0.12.5`。2 回目の実行は skip と表示される |
 | config-claude | `~/.claude/settings.json` の `statusLine` が設定され、Claude Code を再起動すると 3 行表示（モデル/ディレクトリ・ctx/費用・5h/7d 制限）。2 回目は already linked / already set と表示される |
-| install-superpowers | `claude plugin list` に `superpowers@claude-plugins-official`（enabled）が出る。2 回目は already installed と表示される |
+| install-claude-plugins | 最後の一覧に `plugins.txt` のプラグインがすべて enabled で出る。2 回目はすべて already installed と表示される |
 | config-neovim | `nvim` で `<C-p>` がファイル検索、`<leader>e`（leader=Space）がファイルツリー。2 回目は already linked と表示される |
 | config-remmina | 環境変数 `REMMINA_RDP_SERVER` `REMMINA_RDP_USER` を渡して実行すると `~/.local/share/remmina/desktop-pc.remmina` ができる。2 回目は already up to date と表示される。値を変えて流すと既存を `~/.backup/` に退避して作り直す。Remmina で接続し、Windows キー / Alt+Tab がリモート側に効く（未確認） |
 
