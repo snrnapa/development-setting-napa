@@ -30,7 +30,7 @@ bash scripts/install-tmux.sh       # 個別（実行権限が無くても bash �
   ```
 - VS Code を使わない場合: プロジェクトのディレクトリで `bash <このリポジトリ>/scripts/devcontainer-up.sh`。コンテナを起動して tmux に入る（2 回目以降は既存コンテナの tmux に再接続）
 - 反映されるのは GitHub に push 済みの内容。設定を変えたら push してからリビルドする
-- コンテナ内に Claude Code 本体は入らない（install-all.sh は本体を導入しない）
+- Claude Code も本体・設定（CLAUDE.md・サブエージェント・deny）・プラグインまで入る。ログインはコンテナを作り直す度に `claude` を起動して行う。プロジェクトがホストの `~/.claude` をマウントしている場合は、ホスト側を書き換えないよう Claude Code 関連はすべて skip する
 - Markdown のブラウザプレビュー（8090）は VS Code なら自動でポート転送される。devcontainer CLI だけの場合は転送されない
 
 ## スクリプト
@@ -39,7 +39,8 @@ bash scripts/install-tmux.sh       # 個別（実行権限が無くても bash �
 |---|---|---|
 | `scripts/install-tmux.sh` | tmux 本体の導入 + `config-tmux.sh` の呼び出し（導入済みでも設定は反映） | 作成済み |
 | `scripts/config-tmux.sh` | `config/tmux/.tmux.conf` を `~/.tmux.conf` に symlink。起動中の tmux があれば再読み込み | 作成済み |
-| `scripts/config-claude.sh` | Claude Code のステータスライン。`config/claude/statusline.sh` を `~/.claude/statusline.sh` に symlink し、`~/.claude/settings.json` の `statusLine` だけを設定（他のキーは保持、変更前に退避）。jq が無ければ apt で導入 | 作成済み |
+| `scripts/config-claude.sh` | Claude Code の設定。`config/claude/` の `CLAUDE.md`・`agents/*.md`・`statusline.sh` を `~/.claude/` に symlink（他のエージェントは触らない）。`~/.claude/settings.json` には `settings.enforced.json`（deny・ステータスライン。常に揃える）と `settings.defaults.json`（model・effort 等。キーが無い時だけ）を反映し、他のキーは保持（変更前に退避）。settings.json は Claude Code 自身も書き換えるので symlink にしない。jq が無ければ apt で導入 | 作成済み |
+| `scripts/install-claude.sh` | Claude Code 本体の導入（公式のネイティブインストーラ。`~/.local/bin/claude`、sudo 不要）。`claude` が既にあれば導入方法を問わず skip。`CLAUDE_VERSION`（既定 stable）で版指定 | 作成済み |
 | `scripts/install-claude-plugins.sh` | `config/claude/plugins.txt` に並べた Claude Code プラグイン（superpowers / mattpocock-skills / claude-md-management / context7 / frontend-design / ui-ux-pro-max / playwright / security-guidance）を user スコープで一括導入。マーケットプレイス未登録なら追加、導入済みで無効なら有効化。リストから消してもアンインストールはしない。claude CLI が必要 | 作成済み |
 | `scripts/install-remmina.sh` | Remmina（RDP クライアント）の導入（apt）+ `config-remmina.sh` の呼び出し。GUI 環境向け | 作成済み |
 | `scripts/config-remmina.sh` | `config/remmina/desktop-pc.remmina.template` に接続先・ユーザー名を埋めて `~/.local/share/remmina/desktop-pc.remmina` を生成。値は環境変数か `~/.config/development-setting-napa/remmina.env`（無ければ対話入力して保存）。IP とユーザー名は公開リポジトリに置かないためテンプレートには入れない。パスワードは扱わない | 作成済み |
@@ -50,7 +51,7 @@ bash scripts/install-tmux.sh       # 個別（実行権限が無くても bash �
 | `scripts/config-neovim.sh` | `config/nvim/` を `~/.config/nvim` に symlink し、プラグインを `lazy-lock.json` の版で事前取得。最小構成（lazy.nvim + nvim-tree + telescope + gitsigns + diffview + render-markdown + markdown-preview） | 作成済み |
 | `scripts/install-markdown-viewer.sh` | ターミナル用 Markdown ビューア glow の導入（公式 tarball、バージョン固定・sha256 検証。`/usr/local/bin`）。Neovim 内の表示・ブラウザプレビューは config-neovim 側 | 作成済み |
 | `scripts/devcontainer-up.sh` | VS Code を使わずにプロジェクトの devcontainer を起動し、中の tmux（セッション main）に入る。起動時にこのリポジトリを dotfiles として clone させ `install-all.sh` を実行させる。devcontainer CLI が無ければ npx で版固定して使う | 作成済み |
-| `install-all.sh` | tmux → 検索ツール → Neovim（本体・設定）→ lazygit → glow → Claude Code（ステータスライン・プラグイン）の順に実行。1 つ失敗しても続行し、最後に OK / FAIL / SKIP の一覧を出す（FAIL があれば終了コード 1）。claude CLI が無ければプラグイン導入は SKIP。`~/.claude` がマウント（devcontainer でホストの設定を共有）されていれば Claude Code の設定・プラグイン導入はどちらも SKIP（ホストの設定を書き換えないため）。Remmina は `WITH_REMMINA=1` の時だけ | 作成済み |
+| `install-all.sh` | tmux → 検索ツール → Neovim（本体・設定）→ lazygit → glow → Claude Code（設定 → 本体 → プラグイン）の順に実行。1 つ失敗しても続行し、最後に OK / FAIL / SKIP の一覧を出す（FAIL があれば終了コード 1）。claude CLI が無ければプラグイン導入は SKIP。`~/.claude` がマウント（devcontainer でホストの設定を共有）されていれば Claude Code 関連（設定・本体・プラグイン）はすべて SKIP（ホストの設定を書き換えないため）。Remmina は `WITH_REMMINA=1` の時だけ | 作成済み |
 | `scripts/lib/common.sh` | 共通関数（アーキ判定、sudo、apt、ログ） | 作成済み |
 
 ## 手順メモ（docs/）
@@ -78,7 +79,8 @@ bash scripts/install-tmux.sh       # 個別（実行権限が無くても bash �
 | install-tmux | `tmux -V` が `tmux 3.3a` を返す。2 回目の実行は skip（本体）と already linked（設定）と表示される |
 | config-tmux | `ls -l ~/.tmux.conf` が `config/tmux/.tmux.conf` への symlink。tmux 内で `prefix + |` が左右分割 |
 | install-neovim | `nvim --version` が `NVIM v0.12.5`。2 回目の実行は skip と表示される |
-| config-claude | `~/.claude/settings.json` の `statusLine` が設定され、Claude Code を再起動すると 3 行表示（モデル/ディレクトリ・ctx/費用・5h/7d 制限）。2 回目は already linked / already set と表示される |
+| config-claude | `~/.claude/CLAUDE.md`・`~/.claude/agents/` の 4 ファイル・`~/.claude/statusline.sh` が `config/claude/` への symlink。`~/.claude/settings.json` に deny とステータスラインが入る。Claude Code を再起動するとステータスラインが 3 行表示。2 回目はすべて already linked / already up to date と表示される |
+| install-claude | `claude --version` が通る。2 回目は skip と表示される |
 | install-claude-plugins | 最後の一覧に `plugins.txt` のプラグインがすべて enabled で出る。2 回目はすべて already installed と表示される |
 | config-neovim | `nvim` で `<C-p>` がファイル検索、`<leader>e`（leader=Space）がファイルツリー、`<leader>gd` で作業中の差分、`.md` を開くと整形表示。2 回目は already linked と表示される |
 | install-lazygit | `lazygit --version` に `version=0.66.1`、`delta --version` が `delta 0.20.1`。2 回目はどちらも skip と already linked と表示される。tmux 内で `prefix + g` で lazygit が popup で開き、差分が delta 表示になる |
@@ -103,6 +105,24 @@ bash scripts/install-tmux.sh       # 個別（実行権限が無くても bash �
 - 差分は delta で表示。`|` で git 標準表示に切り替え。`e` でファイルを nvim で開く
 - `git diff` などコマンドラインの差分には delta を設定していない（`~/.gitconfig` は触らない方針）。使いたい場合は `git config --global core.pager delta`
 - バージョン上書き: `LAZYGIT_VERSION=x.y.z LAZYGIT_SHA256=<sha256> bash scripts/install-lazygit.sh`（delta は `DELTA_VERSION` / `DELTA_SHA256`、glow は `GLOW_VERSION` / `GLOW_SHA256`）
+
+## Claude Code 設定メモ
+
+`config/claude/` が Claude Code のグローバル設定の唯一の置き場所（旧 `napa-global-claude-config` リポジトリを統合した）。各プロジェクトの CLAUDE.md にはアプリ固有の文脈だけを書き、ワークフローは重複させない。
+
+| ファイル | 役割 |
+|---|---|
+| `CLAUDE.md` | 自律オーケストレーション手順。メッセージに「おまかせ」を含めると発動（着手前ヒアリング → 無人で 仕様 → 仕様レビュー → 実装 → レビュー） |
+| `agents/*.md` | おまかせで使うサブエージェント 4 種: spec-architect / spec-reviewer / implementer / reviewer |
+| `settings.enforced.json` | 常に揃える設定。デプロイ・DB マイグレーション・破壊的削除・sudo・apt 等を `permissions.deny` で強制ブロック、ステータスライン |
+| `settings.defaults.json` | 新しい環境での初期値（model・effort・表示など）。各 PC で変えた値は上書きしない |
+| `plugins.txt` | 一括導入するプラグイン（使い分けは `docs/claude-code-spec-workflow.md`） |
+| `statusline.sh` | ステータスライン（下記） |
+
+- `CLAUDE.md` と `agents/` は symlink なので、`~/.claude/CLAUDE.md` を編集するとこのリポジトリのファイルを直接編集していることになる。commit / push すれば他の PC・devcontainer にも反映される（他の PC では `git pull`）
+- deny を変えた時は `bash scripts/config-claude.sh` を流し直す（settings.json はコピーで反映しているため）
+- 安全は 3 層: ① deny（強制） ② 各エージェントの禁止事項（自重） ③ git による可逆性
+- 無人実行時は各プロジェクトのルートで `claude --dangerously-skip-permissions` で起動する（deny は効いたまま）
 
 ## Claude Code ステータスライン メモ
 

@@ -70,3 +70,22 @@ resolve_sha256() {
     printf '%s' "$4"
   fi
 }
+
+# DEST を SRC への symlink にする（冪等）。既存のファイル・別の場所へのリンクは ~/.backup/<timestamp>/ に退避する。
+#   link_file <SRC> <DEST>
+link_file() {
+  local src="$1" dest="$2" backup_dir
+  if [ -L "$dest" ] && [ "$(readlink -f "$dest")" = "$(readlink -f "$src")" ]; then
+    log "already linked, skip: $dest -> $src"
+    return 0
+  fi
+  if [ -e "$dest" ] || [ -L "$dest" ]; then
+    backup_dir="$HOME/.backup/$(date +%Y%m%d-%H%M%S)"
+    mkdir -p "$backup_dir"
+    mv "$dest" "$backup_dir/$(basename "$dest")"
+    log "existing file moved to: $backup_dir/$(basename "$dest")"
+  fi
+  mkdir -p "$(dirname "$dest")"
+  ln -s "$src" "$dest"
+  log "linked: $dest -> $src"
+}
