@@ -166,11 +166,21 @@ require("lazy").setup({
       require("lazy").load({ plugins = { "markdown-preview.nvim" } })
       vim.fn["mkdp#util#install"]()
     end,
-    init = function()
+    init = function(plugin)
       vim.g.mkdp_echo_preview_url = 1
       -- ポート転送しやすいよう固定（既定はランダム）。別の nvim で同時にプレビューすると
       -- ポートが衝突するので、その時は MKDP_PORT=8091 nvim のように変えて起動する
       vim.g.mkdp_port = vim.env.MKDP_PORT or "8090"
+
+      -- 本文の幅はプラグインの page.css で 900px に制限されているので、ブラウザの幅いっぱいに広げる。
+      -- 差し替え用 CSS は標準の markdown.css に上書きを 1 行足したもの（プラグイン更新にも追従する）
+      local src = plugin.dir .. "/app/_static/markdown.css"
+      if vim.uv.fs_stat(src) then
+        local dest = vim.fn.stdpath("cache") .. "/markdown-preview-wide.css"
+        local css = table.concat(vim.fn.readfile(src), "\n")
+        vim.fn.writefile(vim.split(css .. "\n#page-ctn { max-width: none !important; }\n", "\n"), dest)
+        vim.g.mkdp_markdown_css = dest
+      end
     end,
   },
 }, {
