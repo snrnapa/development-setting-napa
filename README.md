@@ -59,6 +59,7 @@ bash scripts/install-tmux.sh       # 個別（実行権限が無くても bash �
 
 | ドキュメント | 内容 |
 |---|---|
+| `docs/terminal-cheatsheet.md` | tmux / Neovim / lazygit / glow などの操作早見表。Claude Code と並行で作業する時の基本の流れ、VS Code の機能との対応 |
 | `docs/remote-desktop-ubuntu-to-windows.md` | Ubuntu ノートPC (Remmina) から Windows 11 へ RDP 接続。疎通確認・Windows 側設定・画面/音声の調整 |
 | `docs/claude-code-spec-workflow.md` | Claude Code での個人開発の進め方。プラグインの一括導入、場面ごとの使い方（立ち上げ・`/grill-me` での壁打ち・実装）、他の人と開発するときの設定の分け方 |
 
