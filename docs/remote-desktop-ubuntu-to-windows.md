@@ -3,16 +3,18 @@
 自宅 LAN 内で、Ubuntu ノートPC (Remmina) から Windows 11 デスクトップ (RDP) に接続した時の手順メモ。
 IP などは例。実際の値に読み替える（このリポジトリは秘密情報を置かない方針）。
 
-- 例: デスクトップ `192.168.2.107` / ノートPC `192.168.2.112`（同じ 192.168.2.0/24、Wi-Fi）
+- 前提: デスクトップとノートPCが同じ LAN（同じサブネット、Wi-Fi）にいる
+- 以下のコマンドは、デスクトップの IP（Windows 側で `ipconfig` の IPv4 アドレス）を `DESKTOP_IP` に入れてから使う
 
 ## 1. 疎通確認（ノートPC側）
 
 ```bash
+DESKTOP_IP=<デスクトップのIP>
 ip -4 addr show                      # 自分のIP。相手と同じサブネットか
-ping -c 4 192.168.2.107              # 応答なしでも異常とは限らない（下記）
-ip neigh show 192.168.2.107          # REACHABLE ならMACが取れており、相手は起動してLAN上にいる
+ping -c 4 "$DESKTOP_IP"             # 応答なしでも異常とは限らない（下記）
+ip neigh show "$DESKTOP_IP"         # REACHABLE ならMACが取れており、相手は起動してLAN上にいる
 for p in 22 3389 5900; do            # 待ち受けポートの確認
-  timeout 3 bash -c "</dev/tcp/192.168.2.107/$p" 2>/dev/null && echo "$p OPEN" || echo "$p closed/filtered"
+  timeout 3 bash -c "</dev/tcp/$DESKTOP_IP/$p" 2>/dev/null && echo "$p OPEN" || echo "$p closed/filtered"
 done
 ```
 
@@ -51,7 +53,7 @@ Remmina の GUI での操作: 接続を切る → プロファイルを右クリ
 ## 5. 設定をコードで管理する（新しい環境への引き継ぎ）
 
 ```bash
-REMMINA_RDP_SERVER=192.168.2.107 REMMINA_RDP_USER=<Windowsのユーザー名> bash scripts/install-remmina.sh
+REMMINA_RDP_SERVER=<デスクトップのIP> REMMINA_RDP_USER=<Windowsのユーザー名> bash scripts/install-remmina.sh
 ```
 
 - `install-remmina.sh` が Remmina を apt で入れ、`config-remmina.sh` が接続プロファイルを生成する
