@@ -35,3 +35,38 @@ apt_install() {
   fi
   $SUDO env DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends "$@"
 }
+
+# 単体バイナリ・symlink の置き場所
+BIN_DIR="/usr/local/bin"
+
+# GitHub release などの tar.gz を取得し、中の実行ファイル 1 つを $BIN_DIR/<name> に置く。
+#   install_tarball_binary <url> <sha256（空なら検証しない）> <tarball 内のパス> <name>
+# 一時ディレクトリの後始末に trap を使うので、呼び出し側の trap を壊さないようサブシェルで動かす。
+install_tarball_binary() (
+  url="$1" sha256="$2" member="$3" name="$4"
+  have_cmd curl || apt_install curl ca-certificates
+
+  tmp="$(mktemp -d)"
+  trap 'rm -rf "$tmp"' EXIT
+
+  log "downloading $name: $url"
+  curl -fsSL -o "$tmp/pkg.tar.gz" "$url"
+  if [ -n "$sha256" ]; then
+    echo "$sha256  $tmp/pkg.tar.gz" | sha256sum -c --quiet - || die "checksum mismatch: $url"
+    log "checksum ok"
+  fi
+
+  tar -xzf "$tmp/pkg.tar.gz" -C "$tmp" "$member"
+  $SUDO install -m 0755 "$tmp/$member" "$BIN_DIR/$name"
+)
+
+# バージョン上書き時の checksum 決定（install-neovim.sh と同じ規則）。
+#   resolve_sha256 <指定バージョン> <既定バージョン> <既定 sha256> <上書き用 sha256> <上書き用変数名>
+resolve_sha256() {
+  if [ "$1" = "$2" ]; then
+    printf '%s' "${4:-$3}"
+  else
+    [ -n "$4" ] || warn "バージョンを上書きしたが $5 が未指定: checksum は検証されません"
+    printf '%s' "$4"
+  fi
+}

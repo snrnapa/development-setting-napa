@@ -1,0 +1,17 @@
+# lazygit の設定（scripts/config-lazygit.sh が ~/.config/lazygit/config.yml に symlink する）
+# 全項目: https://github.com/jesseduffield/lazygit/blob/master/docs/Config.md
+
+gui:
+  # Nerd Font 無しでも崩れないよう、アイコンは使わない（Neovim 側と同じ方針）
+  nerdFontsVersion: ""
+
+git:
+  # 差分を delta で整形して表示する。'|' キーで git 標準の表示に切り替えられる
+  diffRenderers:
+    - command: delta --{{colorScheme}} --paging=never
+    - type: rawGit
+      name: default
+
+os:
+  # 'e' でファイルを nvim で開く
+  editPreset: nvim

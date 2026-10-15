@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # Neovim の設定配置のみ（本体は install-neovim.sh）。
-# config/nvim/ を ~/.config/nvim に symlink し、プラグインを事前取得する。
+# config/nvim/ を ~/.config/nvim に symlink し、プラグインを lazy-lock.json の版で事前取得する。
 #   NVIM_SKIP_SYNC=1 でプラグイン取得をスキップ（オフライン時など）
 set -euo pipefail
 # shellcheck source=lib/common.sh
@@ -47,10 +47,12 @@ fi
 if [ "${NVIM_SKIP_SYNC:-0}" = "1" ]; then
   log "NVIM_SKIP_SYNC=1, skip plugin sync"
 else
-  log "syncing plugins (lazy.nvim) ..."
-  if nvim --headless "+Lazy! sync" +qa 2>&1; then
+  # sync だと lockfile を無視して最新に上げてしまうので、lockfile どおりに揃える:
+  # install（未導入を lockfile の版で入れる）→ clean（設定から消えたものを削除）→ restore（導入済みを lockfile の版に戻す）
+  log "installing plugins at lazy-lock.json versions ..."
+  if nvim --headless "+Lazy! install" "+Lazy! clean" "+Lazy! restore" +qa 2>&1; then
     echo
-    log "plugins synced"
+    log "plugins installed"
   else
     warn "plugin sync failed: 次回 nvim 起動時に lazy.nvim が再試行します"
   fi

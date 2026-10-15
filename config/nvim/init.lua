@@ -1,6 +1,6 @@
--- 最小構成の Neovim 設定（lazy.nvim + nvim-tree + telescope）
--- 目的: VS Code 相当の「ファイルツリー」と「Ctrl+P でファイルジャンプ」だけを持つ。
--- 補完・LSP などは必要になった時点で plugins に足す。
+-- 最小構成の Neovim 設定（lazy.nvim + nvim-tree + telescope + git 差分 + Markdown 表示）
+-- 目的: VS Code 相当の「ファイルツリー」「Ctrl+P でファイルジャンプ」「Git の差分・履歴」
+-- 「Markdown プレビュー」だけを持つ。補完・LSP などは必要になった時点で plugins に足す。
 
 vim.g.mapleader = " "
 
@@ -86,6 +86,92 @@ require("lazy").setup({
         find_files = { hidden = true }, -- .env 等のドットファイルも対象にする
       },
     },
+  },
+
+  -- 変更行の印（VS Code の左端の色帯相当）と hunk 単位の操作
+  {
+    "lewis6991/gitsigns.nvim",
+    event = { "BufReadPre", "BufNewFile" },
+    opts = {
+      on_attach = function(bufnr)
+        local gs = require("gitsigns")
+        local function map(lhs, rhs, desc)
+          vim.keymap.set("n", lhs, rhs, { buffer = bufnr, desc = desc })
+        end
+        map("]c", function() gs.nav_hunk("next") end, "次の変更箇所")
+        map("[c", function() gs.nav_hunk("prev") end, "前の変更箇所")
+        map("<leader>hp", gs.preview_hunk, "変更箇所の差分をプレビュー")
+        map("<leader>hr", gs.reset_hunk, "変更箇所を元に戻す")
+        map("<leader>hb", function() gs.blame_line({ full = true }) end, "この行の blame")
+      end,
+    },
+  },
+
+  -- VS Code の Source Control / Git Graph 相当: 左にファイル一覧、右に左右並びの差分
+  {
+    "sindrets/diffview.nvim",
+    cmd = { "DiffviewOpen", "DiffviewFileHistory", "DiffviewClose" },
+    keys = {
+      { "<leader>gd", "<cmd>DiffviewOpen<cr>", desc = "作業中の変更を差分表示" },
+      { "<leader>gh", "<cmd>DiffviewFileHistory<cr>", desc = "コミット履歴（リポジトリ全体）" },
+      { "<leader>gf", "<cmd>DiffviewFileHistory %<cr>", desc = "コミット履歴（このファイル）" },
+      { "<leader>gq", "<cmd>DiffviewClose<cr>", desc = "差分表示を閉じる" },
+    },
+    opts = {
+      -- Nerd Font 無しでも崩れないよう、nvim-tree と同じ記号にそろえる
+      use_icons = false,
+      icons = { folder_closed = "▸", folder_open = "▾" },
+      signs = { fold_closed = "▸", fold_open = "▾", done = "✓" },
+    },
+  },
+
+  -- Markdown をバッファ内で整形表示（見出し・表・チェックボックス・コードブロック）
+  -- パーサ（markdown / markdown_inline）は Neovim 本体に同梱されているものを使う
+  {
+    "MeanderingProgrammer/render-markdown.nvim",
+    ft = { "markdown" },
+    keys = {
+      { "<leader>mr", "<cmd>RenderMarkdown toggle<cr>", ft = "markdown", desc = "Markdown 整形表示の切り替え" },
+    },
+    opts = {
+      -- 既定のアイコンは Nerd Font 前提なので、通常のフォントにある記号に置き換える
+      heading = { icons = { "# ", "## ", "### ", "#### ", "##### ", "###### " } },
+      checkbox = {
+        unchecked = { icon = "☐ " },
+        checked = { icon = "☑ " },
+      },
+      code = { sign = false, language_icon = false },
+      link = { enabled = false }, -- リンク種別のアイコンは出さない（リンク自体はそのまま表示）
+      callout = {
+        note = { rendered = "Note" },
+        tip = { rendered = "Tip" },
+        important = { rendered = "Important" },
+        warning = { rendered = "Warning" },
+        caution = { rendered = "Caution" },
+      },
+    },
+  },
+
+  -- ブラウザでのライブプレビュー（画像・Mermaid を見たい時用）
+  -- ブラウザが無い環境（devcontainer 等）では URL を表示するので、ポート転送して開く
+  {
+    "iamcco/markdown-preview.nvim",
+    ft = { "markdown" },
+    cmd = { "MarkdownPreview", "MarkdownPreviewStop", "MarkdownPreviewToggle" },
+    keys = {
+      { "<leader>mp", "<cmd>MarkdownPreviewToggle<cr>", ft = "markdown", desc = "ブラウザでプレビュー" },
+    },
+    -- 配布済みのビルドを取得する（node / yarn は不要）。build 時点では未読込なので先に読み込む
+    build = function()
+      require("lazy").load({ plugins = { "markdown-preview.nvim" } })
+      vim.fn["mkdp#util#install"]()
+    end,
+    init = function()
+      vim.g.mkdp_echo_preview_url = 1
+      -- ポート転送しやすいよう固定（既定はランダム）。別の nvim で同時にプレビューすると
+      -- ポートが衝突するので、その時は MKDP_PORT=8091 nvim のように変えて起動する
+      vim.g.mkdp_port = vim.env.MKDP_PORT or "8090"
+    end,
   },
 }, {
   -- 起動のたびの更新チェック通知は不要
