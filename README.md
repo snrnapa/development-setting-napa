@@ -120,7 +120,7 @@ bash scripts/install-tmux.sh       # 個別（実行権限が無くても bash �
 | `statusline.sh` | ステータスライン（下記） |
 
 - `CLAUDE.md` と `agents/` は symlink なので、`~/.claude/CLAUDE.md` を編集するとこのリポジトリのファイルを直接編集していることになる。commit / push すれば他の PC・devcontainer にも反映される（他の PC では `git pull`）
-- deny を変えた時は `bash scripts/config-claude.sh` を流し直す（settings.json はコピーで反映しているため）
+- deny を足した時は `bash scripts/config-claude.sh` を流し直す（settings.json はコピーで反映しているため）。deny は各 PC の既存の値との和集合で反映するので、各 PC で足した deny は消えない。逆に `settings.enforced.json` から外した deny は自動では消えないので、`~/.claude/settings.json` からも手で消す
 - 安全は 3 層: ① deny（強制） ② 各エージェントの禁止事項（自重） ③ git による可逆性
 - 無人実行時は各プロジェクトのルートで `claude --dangerously-skip-permissions` で起動する（deny は効いたまま）
 

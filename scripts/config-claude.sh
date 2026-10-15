@@ -5,7 +5,7 @@
 #     （他のエージェントは触らない）
 #   - config/claude/statusline.sh を ~/.claude/statusline.sh に symlink
 #   - ~/.claude/settings.json に次の 2 ファイルを反映する（他のキーは保持、変更前に退避）
-#       settings.enforced.json  常にこの値に揃える（危険操作の deny、ステータスライン）
+#       settings.enforced.json  常にこの値に揃える（ステータスライン）。危険操作の deny は足りない分を必ず足す
 #       settings.defaults.json  キーが無い時だけ入れる（model・effort 等。各 PC で変えた値は上書きしない）
 #     settings.json は Claude Code 自身も書き換えるので symlink にはしない。
 #     旧構成（napa-global-claude-config への symlink）なら、その内容を引き継いで通常のファイルに置き換える。
@@ -35,13 +35,18 @@ for agent in "$SRC_DIR"/agents/*.md; do
   link_file "$agent" "$CLAUDE_DIR/agents/$(basename "$agent")"
 done
 
-# --- settings.json（defaults → 現在の値 → enforced の順に重ねる。配列は丸ごと置き換え） ---
+# --- settings.json（defaults → 現在の値 → enforced の順に重ねる） ---
+# permissions.deny だけは和集合にする（各 PC で足した deny を消さない。順序は現在の値を保ち、足りない分を末尾に足す）。
+# そのため enforced から外した deny は自動では消えない（外す時は ~/.claude/settings.json からも手で消す）。
 current='{}'
 if [ -e "$SETTINGS" ]; then
   jq -e . "$SETTINGS" >/dev/null 2>&1 || die "invalid JSON, not touching: $SETTINGS"
   current="$(cat "$SETTINGS")"
 fi
-want="$(jq -s '.[0] * .[1] * .[2]' "$DEFAULTS" <(printf '%s' "$current") "$ENFORCED")"
+want="$(jq -s '
+  (.[1].permissions.deny // []) as $cur | (.[2].permissions.deny // []) as $enf
+  | (.[0] * .[1] * .[2]) | .permissions.deny = ($cur + ($enf - $cur))
+' "$DEFAULTS" <(printf '%s' "$current") "$ENFORCED")"
 
 if [ ! -L "$SETTINGS" ] && [ "$(jq -S . <<<"$current")" = "$(jq -S . <<<"$want")" ]; then
   log "settings already up to date, skip: $SETTINGS"
