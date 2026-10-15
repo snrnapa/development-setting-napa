@@ -17,6 +17,22 @@ WITH_REMMINA=1 bash install-all.sh # Remmina も含める（GUI 環境向け）
 bash scripts/install-tmux.sh       # 個別（実行権限が無くても bash 経由で動く）
 ```
 
+## devcontainer で使う（dotfiles 方式）
+
+他のリポジトリを devcontainer で開く時は、Dev Containers の dotfiles 機能でこのリポジトリを自動導入する。
+コンテナ作成時に `~/dotfiles` へ clone して `install-all.sh` を実行する（リビルドの度に 1〜2 分。再起動では走らない）。プロジェクト側の `.devcontainer/` は触らない。
+
+- VS Code で開く場合: ユーザー設定（`~/.config/Code/User/settings.json`）に以下を入れておくだけ
+  ```json
+  "dotfiles.repository": "https://github.com/snrnapa/development-setting-napa",
+  "dotfiles.targetPath": "~/dotfiles",
+  "dotfiles.installCommand": "install-all.sh"
+  ```
+- VS Code を使わない場合: プロジェクトのディレクトリで `bash <このリポジトリ>/scripts/devcontainer-up.sh`。コンテナを起動して tmux に入る（2 回目以降は既存コンテナの tmux に再接続）
+- 反映されるのは GitHub に push 済みの内容。設定を変えたら push してからリビルドする
+- コンテナ内に Claude Code 本体は入らない（install-all.sh は本体を導入しない）
+- Markdown のブラウザプレビュー（8090）は VS Code なら自動でポート転送される。devcontainer CLI だけの場合は転送されない
+
 ## スクリプト
 
 | スクリプト | 責務 | 状態 |
@@ -33,7 +49,8 @@ bash scripts/install-tmux.sh       # 個別（実行権限が無くても bash �
 | `scripts/install-neovim.sh` | Neovim 本体（公式 tarball、v0.12.5 固定・sha256 検証。`/opt/nvim-<ver>` → `/usr/local/bin/nvim`） | 作成済み |
 | `scripts/config-neovim.sh` | `config/nvim/` を `~/.config/nvim` に symlink し、プラグインを `lazy-lock.json` の版で事前取得。最小構成（lazy.nvim + nvim-tree + telescope + gitsigns + diffview + render-markdown + markdown-preview） | 作成済み |
 | `scripts/install-markdown-viewer.sh` | ターミナル用 Markdown ビューア glow の導入（公式 tarball、バージョン固定・sha256 検証。`/usr/local/bin`）。Neovim 内の表示・ブラウザプレビューは config-neovim 側 | 作成済み |
-| `install-all.sh` | tmux → 検索ツール → Neovim（本体・設定）→ lazygit → glow → Claude Code（ステータスライン・プラグイン）の順に実行。1 つ失敗しても続行し、最後に OK / FAIL / SKIP の一覧を出す（FAIL があれば終了コード 1）。claude CLI が無ければプラグイン導入は SKIP。Remmina は `WITH_REMMINA=1` の時だけ | 作成済み |
+| `scripts/devcontainer-up.sh` | VS Code を使わずにプロジェクトの devcontainer を起動し、中の tmux（セッション main）に入る。起動時にこのリポジトリを dotfiles として clone させ `install-all.sh` を実行させる。devcontainer CLI が無ければ npx で版固定して使う | 作成済み |
+| `install-all.sh` | tmux → 検索ツール → Neovim（本体・設定）→ lazygit → glow → Claude Code（ステータスライン・プラグイン）の順に実行。1 つ失敗しても続行し、最後に OK / FAIL / SKIP の一覧を出す（FAIL があれば終了コード 1）。claude CLI が無ければプラグイン導入は SKIP。`~/.claude` がマウント（devcontainer でホストの設定を共有）されていれば Claude Code の設定・プラグイン導入はどちらも SKIP（ホストの設定を書き換えないため）。Remmina は `WITH_REMMINA=1` の時だけ | 作成済み |
 | `scripts/lib/common.sh` | 共通関数（アーキ判定、sudo、apt、ログ） | 作成済み |
 
 ## 手順メモ（docs/）
